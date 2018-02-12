@@ -13,6 +13,8 @@ from sys import argv
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from SocketServer   import ThreadingMixIn
 
+import tensorflow as tf
+
 
 """ Custom HTTP server derives from ThreadingMixIn and HTTPServer.
 """
@@ -30,7 +32,7 @@ def MakePostHandler(queue):
             self.end_headers()
 
         def do_POST(self):
-            queue.put(123)
+            queue.put((123, "WORLD"))
             self._set_headers()
             self.wfile.write("%d" % (123))
 
@@ -42,8 +44,8 @@ def MakePostHandler(queue):
 class TfHttpGenerator():
     queue = Queue.Queue()
 
-    def enqueue(self, o):
-        self.queue.put(o)
+    def enqueue(self, v):
+        self.queue.put((v, "HELLO"))
 
     def generator(self):
         # TODO: Check for keepalive flag.
@@ -75,20 +77,32 @@ class TfHttpGenerator():
 """
 def main():
     tfgen = TfHttpGenerator()
-    gen   = tfgen.generator()
 
     # Start the server
     tfgen.run_threaded()
 
-    # Stuff some items on queue
-    tfgen.enqueue(10);
-    tfgen.enqueue(11);
-    tfgen.enqueue(12);
-    tfgen.enqueue(13);
+    dataset = tf.data.Dataset.from_generator(tfgen.generator, output_types=(tf.int32, tf.string))
 
-    for i in range(10):
-        x = gen.next()
-        print("GOT ITEM: %d" % x)
+    # Stuff some items on queue
+    tfgen.enqueue(0);
+    tfgen.enqueue(1);
+    tfgen.enqueue(2);
+    tfgen.enqueue(3);
+    tfgen.enqueue(4);
+    tfgen.enqueue(5);
+
+    tfgen.enqueue(6);
+
+    dataset = dataset.batch(2)
+    iter = dataset.make_one_shot_iterator()
+
+    x, y = iter.get_next()
+    op = tf.Print(x, [x, y], "X,Y=")
+
+    with tf.Session() as sess:
+        while True:
+            sess.run(op)
+
 
 if __name__ == "__main__":
     main()
