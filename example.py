@@ -1,3 +1,4 @@
+import Queue
 import tensorflow as tf
 from tf_http_generator import TfHttpGenerator
 
@@ -6,9 +7,25 @@ from tf_http_generator import TfHttpGenerator
     This code is WIP - the below main() exists to validate the generator.
 
 """
+def customPostWrapper(queue):
+    """ Wrapper to the app specific POST data handler.  This is so
+        that we can give the dynamically invoked function access to
+        the queue created by the app.
+    """
+    def func(data):
+        # TODO (sabhiram) : Swap this with HTTP POST payload
+        queue.put((42, "WORLD"))
+        print("customPostHandler got :: %s" % data)
+
+    return func
+
+
 def main():
+    # Queue that we want to populate in the `customPostHandler`
+    queue = Queue.Queue()
+
     # Special server + generator for tensor batches.
-    tfgen = TfHttpGenerator()
+    tfgen = TfHttpGenerator(queue, customPostWrapper(queue), port=8081)
 
     # Start the server (runs forever on another thread until the parent
     # class is destructed).
@@ -29,15 +46,15 @@ def main():
     #       curl -d '{}' -X POST http://localhost:8080
     # This will enqueue an item onto the generator queue (for now the value
     # is a fixed int32 and a fixed string).
-    tfgen.enqueue(0);
-    tfgen.enqueue(1);
-    tfgen.enqueue(2);
-    tfgen.enqueue(3);
-    tfgen.enqueue(4);
-    tfgen.enqueue(5);
+    queue.put((0, "HELLO"));
+    queue.put((1, "HELLO"));
+    queue.put((2, "HELLO"));
+    queue.put((3, "HELLO"));
+    queue.put((4, "HELLO"));
+    queue.put((5, "HELLO"));
 
     # This item does not have a pair to be part of a batch with yet.
-    tfgen.enqueue(6);
+    queue.put((6, "HELLO"));
 
     # Define the input and label (x and y for the dataset)
     x, y = iter.get_next()

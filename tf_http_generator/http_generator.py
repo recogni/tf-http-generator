@@ -18,36 +18,27 @@ class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
     pass
 
 
-def MakePostHandler(queue):
-    """ Wrapper function to compose a HTTP Handler for the POSTs but
-        one which has access to the invoking classes queues.
+def MakePostHandler(postDataCb):
+    """ Wrapper function to compose a HTTP Handler for the POSTs.
+
+        The `postDataCb` will be invoked with the POST data, this will
+        allow the app to enqueue data to its queue.
     """
 
     class CustomHandler(BaseHTTPRequestHandler):
         """ Custom HTTP handler to intercept and enqueue POST events.
         """
-
-        def _set_headers(self):
-            """ Sets required HTTP headers for success and sets up the
-                content type for any data written to self.wfile.
-            """
-            self.send_response(200)
-            self.send_header("Content-type", "text/html")
-            self.end_headers()
-
         def do_POST(self):
             """ POST handler.
             """
-            # TODO (sabhiram) : Fetch POST body and parse here
             length = int(self.headers['Content-Length'])
-            data   = json.loads(self.rfile.read(length))
-            print(data)
+            data   = self.rfile.read(length)
+            postDataCb(data)
 
-            # TODO (sabhiram) : Swap this with HTTP POST payload
-            queue.put((42, "WORLD"))
-            self._set_headers()
-
-            # TODO (sabhiram) : Swap this with standard 200 response
+            # Respond with a 200 - OK.
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
             self.wfile.write("OK")
 
     return CustomHandler
@@ -56,14 +47,18 @@ def MakePostHandler(queue):
 class TfHttpGenerator():
     """ Generator class to wrap the server and generator for TF.
     """
+    queue   = None              # Opaque queue from app (fetch only)
+    postFn  = None              # Post fn to invoke
+    port    = None              # Server PORT #
 
-    queue = Queue.Queue()               # Application global queue
-
-
-    def enqueue(self, v):
-        """ TEMPORARY helper function to enqueue tuples into the queue.
+    def __init__(self, q, pfn, port=8080):
+        """ Custom HTTP generator.  Requires an argument which specifies
+            the handler function to invoke which parses the JSON data
+            and enqueues into the queue.
         """
-        self.queue.put((v, "HELLO"))
+        self.queue  = q
+        self.postFn = pfn
+        self.port   = port
 
 
     def generator(self):
@@ -80,11 +75,15 @@ class TfHttpGenerator():
             while not self.queue.empty():
                 yield self.queue.get()
 
-    def run(self, port=8080):
+
+    def run(self):
+        server_addr = ("", self.port)
+        posth       = MakePostHandler(self.postFn)
+        httpd       = ThreadingHTTPServer(server_addr, posth)
+
         print("Server starting...")
-        server_addr = ("", port)
-        httpd = ThreadingHTTPServer(server_addr, MakePostHandler(self.queue))
         httpd.serve_forever()
+
 
     def run_threaded(self):
         t = threading.Thread(target=self.run)
