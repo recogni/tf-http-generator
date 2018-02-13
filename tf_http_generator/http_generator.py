@@ -5,8 +5,6 @@ Accepts HTTP POSTs which will enqueue data to the process queue.
 """
 import threading
 import time
-import Queue
-import json
 
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from SocketServer   import ThreadingMixIn
@@ -73,7 +71,8 @@ class TfHttpGenerator():
                 time.sleep(1)
                 continue
             while not self.queue.empty():
-                yield self.queue.get()
+                (x, y) = self.queue.get()
+                yield x, y
 
 
     def run(self):
