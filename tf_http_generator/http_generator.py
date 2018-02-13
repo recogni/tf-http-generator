@@ -6,7 +6,7 @@ Accepts HTTP POSTs which will enqueue data to the process queue.
 import threading
 import time
 import Queue
-import cgi
+import json
 
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from SocketServer   import ThreadingMixIn
@@ -39,15 +39,16 @@ def MakePostHandler(queue):
             """ POST handler.
             """
             # TODO (sabhiram) : Fetch POST body and parse here
-            data = self.rfile.read(int(self.headers['Content-Length']))
-            print("GOT DATA: %s" % (data))
+            length = int(self.headers['Content-Length'])
+            data   = json.loads(self.rfile.read(length))
+            print(data)
 
             # TODO (sabhiram) : Swap this with HTTP POST payload
-            queue.put((123, "WORLD"))
+            queue.put((42, "WORLD"))
             self._set_headers()
 
             # TODO (sabhiram) : Swap this with standard 200 response
-            self.wfile.write("%d" % (123))
+            self.wfile.write("OK")
 
     return CustomHandler
 

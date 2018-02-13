@@ -47,8 +47,13 @@ def main():
 
     # Run the session.
     with tf.Session() as sess:
-        while True:
-            sess.run(op)
+        sess.run(op) # Yields (0,1)
+        sess.run(op) # Yields (2,3)
+        sess.run(op) # Yields (4,5)
+
+        # Will wait here until a POST is made
+        sess.run(op) # Yields (6,42)
+
 
 
 if __name__ == "__main__":
