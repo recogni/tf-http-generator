@@ -67,12 +67,10 @@ class TfHttpGenerator():
         # TODO (sabhiram) : Figure out correct time to sleep, do we need a warning?
         while True:
             if self.queue.empty():
-                print("Generator empty - waiting for more POST data")
+                # print("Generator empty - waiting for more POST data")
                 time.sleep(1)
-                continue
             while not self.queue.empty():
-                (x, y) = self.queue.get()
-                yield x, y
+                yield self.queue.get()
 
 
     def run(self):

@@ -24,11 +24,10 @@ def customPostWrapper(queue):
         # TODO (sabhiram) : Swap this with HTTP POST payload
         o = json.loads(data)
         if o["ImageFileName"]:
-            with open(o["ImageFileName"], "w") as fout:
-                bs = base64.b64decode(o["ImageData"])
-                b  = bytearray()
-                b.extend(bs)
-                queue.put((b, "LABEL"))
+            bs = base64.b64decode(o["ImageData"])
+            b  = bytearray()
+            b.extend(bs)
+            queue.put((b, "LABEL"))
     return func
 
 
@@ -50,7 +49,7 @@ def main():
         output_types=(tf.uint8, tf.string))
 
     # Define batch size
-    dataset = dataset.batch(2)
+    dataset = dataset.batch(32)
     iter = dataset.make_one_shot_iterator()
 
     # Define the input and label (x and y for the dataset)
@@ -62,13 +61,10 @@ def main():
 
     # Run the session.
     with tf.Session() as sess:
-        sess.run(op) # Yields (0,1)
-        sess.run(op) # Yields (2,3)
-        sess.run(op) # Yields (4,5)
+        for i in range(100):
+            sess.run(op) # Yields (0,1)
 
-        # Will wait here until a POST is made
-        sess.run(op) # Yields (6,42)
-
+    print("Done with 100 batches of 32 images each")
 
 if __name__ == "__main__":
     main()
