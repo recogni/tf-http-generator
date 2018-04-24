@@ -48,6 +48,8 @@ class TfHttpGenerator():
     queue   = None              # Opaque queue from app (fetch only)
     postFn  = None              # Post fn to invoke
     port    = None              # Server PORT #
+    httpd   = None              # HTTP server instance
+
 
     def __init__(self, q, pfn, port=8080):
         """ Custom HTTP generator.  Requires an argument which specifies
@@ -74,15 +76,26 @@ class TfHttpGenerator():
 
 
     def run(self):
+        """ Run the threaded server endlessly.
+        """
         server_addr = ("", self.port)
         posth       = MakePostHandler(self.postFn)
-        httpd       = ThreadingHTTPServer(server_addr, posth)
+        self.httpd  = ThreadingHTTPServer(server_addr, posth)
 
         print("Server starting...")
-        httpd.serve_forever()
+        self.httpd.serve_forever()
+
+
+    def shutdown(self):
+        """ Shutdown the HTTP server.
+        """
+        self.httpd.socket.close()
+        self.httpd.shutdown()
 
 
     def run_threaded(self):
+        """ Execute the HTTP server's handler in its own thread.
+        """
         t = threading.Thread(target=self.run)
         t.daemon = True
         t.start()
