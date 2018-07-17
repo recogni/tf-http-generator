@@ -57,7 +57,7 @@ class TfHttpGenerator():
     httpd   = None              # HTTP server instance
 
 
-    def __init__(self, q, pfn, port=8080):
+    def __init__(self, q, pfn=None, port=8080):
         """ Custom HTTP generator.  Requires an argument which specifies
             the handler function to invoke which parses the JSON data
             and enqueues into the queue.

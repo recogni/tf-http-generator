@@ -25,9 +25,8 @@ def main():
     queue = Queue.Queue()
 
     # Special server + generator for tensor batches.
-    post_wrapper = customPostWrapper(queue)
-    # post_wrapper = None     # Testing case where no handler specified.
-    tfgen = TfHttpGenerator(queue, post_wrapper, port=8081)
+    # tfgen = TfHttpGenerator(queue, customPostWrapper(queue), port=8081)
+    tfgen = TfHttpGenerator(queue, port=8081)
 
     # Start the server (runs forever on another thread until the parent
     # class is destructed).
