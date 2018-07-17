@@ -16,13 +16,15 @@ class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
     pass
 
 
-def MakePostHandler(postDataCb):
+def MakePostHandler(postDataCb, queue):
     """ Wrapper function to compose a HTTP Handler for the POSTs.
 
-        The `postDataCb` will be invoked with the POST data, this will
-        allow the app to enqueue data to its queue.
-    """
+        The `postDataCb` will be invoked with the POST data, this will allow
+        the app to enqueue data to it's queue.
 
+        If the `postDataCb` is not specified, then the POST data is blindly
+        enqueued to the application queue.
+    """
     class CustomHandler(BaseHTTPRequestHandler):
         """ Custom HTTP handler to intercept and enqueue POST events.
         """
@@ -31,7 +33,11 @@ def MakePostHandler(postDataCb):
             """
             length = int(self.headers['Content-Length'])
             data   = self.rfile.read(length)
-            postDataCb(data)
+
+            if postDataCb:
+                postDataCb(data)
+            else:
+                queue.put(data)
 
             # Respond with a 200 - OK.
             self.send_response(200)
@@ -79,7 +85,7 @@ class TfHttpGenerator():
         """ Run the threaded server endlessly.
         """
         server_addr = ("", self.port)
-        posth       = MakePostHandler(self.postFn)
+        posth       = MakePostHandler(self.postFn, self.queue)
         self.httpd  = ThreadingHTTPServer(server_addr, posth)
 
         print("Server starting...")

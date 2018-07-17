@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name="tf_http_generator",
-    version=0.1,
+    version="0.2.0",
     description="Tensorflow data generator, sourced from HTTP POSTs",
     url="https://github.com/recogni/tf-http-generator",
     author="sabhiram",
