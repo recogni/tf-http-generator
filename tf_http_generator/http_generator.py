@@ -6,8 +6,8 @@ Accepts HTTP POSTs which will enqueue data to the process queue.
 import threading
 import time
 
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-from SocketServer   import ThreadingMixIn
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from socketserver import ThreadingMixIn
 
 
 class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
